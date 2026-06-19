@@ -4,12 +4,6 @@ using System.Collections.Generic;
 public class Obstacle : MonoBehaviour
 {
 
-    private GameObject player;
-
-    void Start()
-    {
-        player = GameObject.FindGameObjectWithTag("Player");
-    }
     private void OnTriggerEnter2D(Collider2D collision)
     {
         if (collision.tag == "Border")
@@ -18,8 +12,12 @@ public class Obstacle : MonoBehaviour
             Destroy(this.gameObject);
         }else if (collision.tag == "Player")
         {
-            // Menghancurkan objek ini saat bertabrakan dengan pemain
-            Destroy(player.gameObject);
+            GameOver gameOver = collision.GetComponentInParent<GameOver>();
+
+            if (gameOver != null)
+            {
+                gameOver.HandleObstacleHit();
+            }
         }
     }
 }
