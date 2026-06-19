@@ -1,19 +1,63 @@
 using UnityEngine;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine.UI;
+
 public class ScoreManager : MonoBehaviour
 {
-   public Text scoreText;
+   public static ScoreManager Instance { get; private set; }
+
+   [SerializeField] private Text scoreText;
+   [SerializeField] private float scoreMultiplier = 1f;
+   [SerializeField] private int minimumFontSize = 48;
+
    private float score;
 
-   void Update()
+   public int CurrentScore => (int)score;
+
+   private void Awake()
    {
-      if (GameObject.FindGameObjectWithTag("Player") != null)
+      Instance = this;
+   }
+
+   private void Start()
+   {
+      SetupScoreText();
+      UpdateScoreText();
+   }
+
+   private void Update()
+   {
+      if (Time.timeScale == 0f || GameObject.FindGameObjectWithTag("Player") == null)
+         return;
+
+      score += scoreMultiplier * Time.deltaTime;
+      UpdateScoreText();
+   }
+
+   private void UpdateScoreText()
+   {
+      if (scoreText != null)
       {
-         score += 1 * Time.deltaTime;
          scoreText.text = ((int)score).ToString();
       }
-     
-   } 
+   }
+
+   private void SetupScoreText()
+   {
+      if (scoreText == null)
+      {
+         scoreText = GetComponent<Text>();
+      }
+
+      if (scoreText == null)
+         return;
+
+      if (scoreText.fontSize < minimumFontSize)
+      {
+         scoreText.fontSize = minimumFontSize;
+      }
+
+      scoreText.alignment = TextAnchor.MiddleCenter;
+      scoreText.horizontalOverflow = HorizontalWrapMode.Overflow;
+      scoreText.verticalOverflow = VerticalWrapMode.Overflow;
+   }
 }
