@@ -1,11 +1,15 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using TMPro;
 
 public class GameOver : MonoBehaviour
 {
+    [Header("Game Over UI")]
+    [Header("Game Over UI")]
     [SerializeField] private GameObject gameOverPanel;
-    [SerializeField] private Text finalScoreText;
+    [SerializeField] private Text finalScoreText; // Ganti kembali ke Text (Font standar Unity)
+    [SerializeField] private Font scoreFont; // Assign Sniglet-Regular.ttf di Inspector
     [SerializeField] private SecondChanceQuizManager secondChanceQuizManager;
     [SerializeField] private Transform playerRespawnPoint;
     [SerializeField] private float reviveInvulnerabilityTime = 1f;
@@ -134,6 +138,7 @@ public class GameOver : MonoBehaviour
             return;
         }
 
+        // Buat GameObject baru dengan komponen Text (bawaan Unity)
         GameObject finalScoreObject = new GameObject("Final Score Text", typeof(Text));
         finalScoreObject.transform.SetParent(gameOverPanel.transform, false);
 
@@ -144,10 +149,15 @@ public class GameOver : MonoBehaviour
         rectTransform.sizeDelta = new Vector2(700f, 80f);
 
         finalScoreText = finalScoreObject.GetComponent<Text>();
-        finalScoreText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-        finalScoreText.fontSize = 48;
+        
+        // Setup Font Sniglet (sama seperti quiz)
+        finalScoreText.font = scoreFont != null ? scoreFont : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        finalScoreText.fontSize = 46; // Sesuaikan ukuran font
         finalScoreText.alignment = TextAnchor.MiddleCenter;
-        finalScoreText.color = Color.black;
+        
+        // Warna Coklat Sesuai Gambar Pertama (#8B4513 - SaddleBrown)
+        finalScoreText.color = new Color(0.545f, 0.271f, 0.075f);
+        
         finalScoreText.horizontalOverflow = HorizontalWrapMode.Overflow;
         finalScoreText.verticalOverflow = VerticalWrapMode.Overflow;
     }

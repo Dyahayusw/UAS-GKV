@@ -606,6 +606,7 @@ GameObject:
   - component: {fileID: 391113761}
   - component: {fileID: 391113760}
   - component: {fileID: 391113762}
+  - component: {fileID: 391113763}
   m_Layer: 0
   m_Name: Game Manager
   m_TagString: Untagged
@@ -661,6 +662,102 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameOver
   gameOverPanel: {fileID: 1270972300}
+  finalScoreText: {fileID: 0}
+  secondChanceQuizManager: {fileID: 391113763}
+  playerRespawnPoint: {fileID: 0}
+  reviveInvulnerabilityTime: 1
+--- !u!114 &391113763
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 391113759}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 447dc21354a546a487e182f7bd786f48, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SecondChanceQuizManager
+  quizPanel: {fileID: 0}
+  quizBackgroundSprite: {fileID: 21300000, guid: 87a00b4cdbf54744e8037c8bbe009044, type: 3}
+  quizFont: {fileID: 12800000, guid: a5e9b144bc801f844b659f81f7a15d2b, type: 3}
+  questionText: {fileID: 0}
+  answerButtons: []
+  answerTextVerticalOffset: 14
+  answerTextWidthRatio: 0.75
+  answerTextHeightRatio: 0.45
+  questions:
+  - question: Kerajaan maritim besar yang berpusat di Sumatera adalah?
+    answers:
+    - Majapahit
+    - Sriwijaya
+    - Singasari
+    - Kediri
+    correctAnswerIndex: 1
+  - question: Kerajaan Hindu tertua di Indonesia adalah?
+    answers:
+    - Kutai
+    - Demak
+    - Banten
+    - Mataram Islam
+    correctAnswerIndex: 0
+  - question: Raja terkenal dari Kerajaan Majapahit adalah?
+    answers:
+    - Hayam Wuruk
+    - Sultan Agung
+    - Purnawarman
+    - Balaputradewa
+    correctAnswerIndex: 0
+  - question: Kerajaan Islam pertama di Indonesia adalah?
+    answers:
+    - Samudra Pasai
+    - Tarumanegara
+    - Pajajaran
+    - Singasari
+    correctAnswerIndex: 0
+  - question: Kerajaan Tarumanegara terkenal dengan raja bernama?
+    answers:
+    - Purnawarman
+    - Hayam Wuruk
+    - Ken Arok
+    - Sultan Agung
+    correctAnswerIndex: 0
+  - question: Kerajaan Singasari didirikan oleh?
+    answers:
+    - Ken Arok
+    - Gajah Mada
+    - Balaputradewa
+    - Mulawarman
+    correctAnswerIndex: 0
+  - question: Sumpah Palapa berkaitan dengan tokoh dari Majapahit bernama?
+    answers:
+    - Gajah Mada
+    - Sultan Hasanuddin
+    - Purnawarman
+    - Airlangga
+    correctAnswerIndex: 0
+  - question: Kerajaan bercorak Buddha yang menjadi pusat pembelajaran di Sumatera
+      adalah?
+    answers:
+    - Sriwijaya
+    - Kutai
+    - Demak
+    - Banten
+    correctAnswerIndex: 0
+  - question: Kerajaan Islam di Jawa yang terkenal dengan Wali Songo adalah?
+    answers:
+    - Demak
+    - Kutai
+    - Tarumanegara
+    - Kediri
+    correctAnswerIndex: 0
+  - question: Kerajaan Gowa-Tallo berada di wilayah?
+    answers:
+    - Sulawesi Selatan
+    - Sumatera Barat
+    - Jawa Tengah
+    - Kalimantan Timur
+    correctAnswerIndex: 0
 --- !u!1 &445324915
 GameObject:
   m_ObjectHideFlags: 0
@@ -871,7 +968,7 @@ Transform:
   m_GameObject: {fileID: 519420028}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -10}
+  m_LocalPosition: {x: 0.53698814, y: 0.4027813, z: -389.4425}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1292,6 +1389,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameOver
   gameOverPanel: {fileID: 1270972300}
+  finalScoreText: {fileID: 0}
+  secondChanceQuizManager: {fileID: 0}
+  playerRespawnPoint: {fileID: 0}
+  reviveInvulnerabilityTime: 1
 --- !u!1 &619394800
 GameObject:
   m_ObjectHideFlags: 0
@@ -1681,6 +1782,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ScoreManager
   scoreText: {fileID: 1097949204}
+  scoreMultiplier: 1
+  minimumFontSize: 48
 --- !u!114 &1097949204
 MonoBehaviour:
   m_ObjectHideFlags: 0
