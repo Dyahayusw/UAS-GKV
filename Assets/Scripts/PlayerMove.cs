@@ -5,6 +5,8 @@ public class PlayerMove : MonoBehaviour
 {
     [SerializeField] private float moveSpeed = 5f;
     [SerializeField] private float flySpeed = 5f;
+    [SerializeField] private float minY = -3.4f;
+    [SerializeField] private float maxY = 4.5f;
 
     private Rigidbody2D rb;
 
@@ -33,6 +35,13 @@ public class PlayerMove : MonoBehaviour
                 verticalInput = -1f;
         }
 
+        Vector2 position = rb.position;
+        if ((position.y <= minY && verticalInput < 0f) || (position.y >= maxY && verticalInput > 0f))
+        {
+            verticalInput = 0f;
+        }
+
+        rb.position = new Vector2(position.x, Mathf.Clamp(position.y, minY, maxY));
         rb.linearVelocity = new Vector2(moveSpeed, verticalInput * flySpeed);
     }
 }

@@ -14,6 +14,12 @@ public class SecondChanceQuizManager : MonoBehaviour
     [SerializeField] private Text questionText;
     [SerializeField] private Button[] answerButtons;
 
+#if UNITY_EDITOR
+    [Header("Editor Preview")]
+    [Tooltip("Aktifkan agar UI quiz dibuat sebagai object scene, sehingga bisa diedit dari Hierarchy.")]
+    [SerializeField] private bool showQuizUiInEditor = true;
+#endif
+
     [Header("Answer Text Offset (sesuaikan agar pas di tengah area merah)")]
     [Tooltip("Geser teks jawaban secara vertikal (pixel). Nilai negatif = turun, positif = naik.")]
     [SerializeField] private float answerTextVerticalOffset = 10f;
@@ -92,6 +98,8 @@ public class SecondChanceQuizManager : MonoBehaviour
     private readonly string[] answerLabels = { "A. ", "B. ", "C. ", "D. " };
 
 #if UNITY_EDITOR
+    private bool editorRefreshQueued;
+
     private void OnValidate()
     {
         if (quizBackgroundSprite == null)
@@ -105,7 +113,64 @@ public class SecondChanceQuizManager : MonoBehaviour
         }
 
         // Live-update posisi teks jawaban di Editor saat slider offset diubah
+        if (!Application.isPlaying && showQuizUiInEditor)
+        {
+            QueueEditorQuizUiRefresh();
+        }
+
         RepositionAnswerTexts();
+    }
+
+    private void QueueEditorQuizUiRefresh()
+    {
+        if (editorRefreshQueued)
+            return;
+
+        editorRefreshQueued = true;
+        EditorApplication.delayCall += () =>
+        {
+            editorRefreshQueued = false;
+
+            if (this == null || Application.isPlaying || !showQuizUiInEditor)
+                return;
+
+            EnsureQuizUiExistsInScene();
+            SetQuizUiVisibleInEditor(true);
+        };
+    }
+
+    [ContextMenu("Create/Refresh Quiz UI In Scene")]
+    private void EnsureQuizUiExistsInScene()
+    {
+        LoadDefaultBackgroundSprite();
+        LoadDefaultQuizFont();
+
+        if (quizPanel == null || questionText == null || answerButtons == null || answerButtons.Length == 0)
+        {
+            CreateDefaultQuizUi();
+        }
+
+        ApplyQuizTextStyle();
+        RepositionAnswerTexts();
+
+#if UNITY_EDITOR
+        if (!Application.isPlaying)
+        {
+            EditorUtility.SetDirty(this);
+            if (quizPanel != null)
+            {
+                EditorUtility.SetDirty(quizPanel);
+            }
+        }
+#endif
+    }
+
+    private void SetQuizUiVisibleInEditor(bool isVisible)
+    {
+        if (quizPanel != null)
+        {
+            quizPanel.SetActive(isVisible);
+        }
     }
 #endif
 
@@ -182,8 +247,21 @@ public class SecondChanceQuizManager : MonoBehaviour
             canvasScaler.referenceResolution = new Vector2(1920f, 1080f);
         }
 
-        quizPanel = new GameObject("Second Chance Quiz Panel", typeof(Image));
-        quizPanel.transform.SetParent(canvas.transform, false);
+        Transform existingQuizPanel = canvas.transform.Find("Second Chance Quiz Panel");
+        if (existingQuizPanel != null)
+        {
+            quizPanel = existingQuizPanel.gameObject;
+        }
+        else
+        {
+            quizPanel = new GameObject("Second Chance Quiz Panel", typeof(Image));
+            quizPanel.transform.SetParent(canvas.transform, false);
+        }
+
+        if (quizPanel.GetComponent<Image>() == null)
+        {
+            quizPanel.AddComponent<Image>();
+        }
 
         RectTransform panelRect = quizPanel.GetComponent<RectTransform>();
         panelRect.anchorMin = Vector2.zero;
@@ -196,13 +274,26 @@ public class SecondChanceQuizManager : MonoBehaviour
         panelImage.color = Color.white;
         panelImage.preserveAspect = false;
 
-        questionText = CreateText("Question Text", quizPanel.transform, new Vector2(0.5f, 0.675f), new Vector2(1050f, 170f), 46, TextAnchor.MiddleCenter);
+        questionText = FindOrCreateText("Question Text", quizPanel.transform, new Vector2(0.5f, 0.675f), new Vector2(1050f, 170f), 46, TextAnchor.MiddleCenter);
         answerButtons = new Button[4];
 
-        answerButtons[0] = CreateButton("Answer Button A", quizPanel.transform, new Vector2(0.34f, 0.43f), new Vector2(360f, 95f));
-        answerButtons[1] = CreateButton("Answer Button B", quizPanel.transform, new Vector2(0.34f, 0.265f), new Vector2(360f, 95f));
-        answerButtons[2] = CreateButton("Answer Button C", quizPanel.transform, new Vector2(0.66f, 0.43f), new Vector2(360f, 95f));
-        answerButtons[3] = CreateButton("Answer Button D", quizPanel.transform, new Vector2(0.66f, 0.265f), new Vector2(360f, 95f));
+        answerButtons[0] = FindOrCreateButton("Answer Button A", quizPanel.transform, new Vector2(0.34f, 0.43f), new Vector2(360f, 95f));
+        answerButtons[1] = FindOrCreateButton("Answer Button B", quizPanel.transform, new Vector2(0.34f, 0.265f), new Vector2(360f, 95f));
+        answerButtons[2] = FindOrCreateButton("Answer Button C", quizPanel.transform, new Vector2(0.66f, 0.43f), new Vector2(360f, 95f));
+        answerButtons[3] = FindOrCreateButton("Answer Button D", quizPanel.transform, new Vector2(0.66f, 0.265f), new Vector2(360f, 95f));
+    }
+
+    private Text FindOrCreateText(string objectName, Transform parent, Vector2 anchor, Vector2 size, int fontSize, TextAnchor alignment)
+    {
+        Transform existingText = parent.Find(objectName);
+        if (existingText != null && existingText.TryGetComponent(out Text text))
+        {
+            ConfigureRectTransform(text.GetComponent<RectTransform>(), anchor, size);
+            ApplyTextStyle(text, fontSize);
+            return text;
+        }
+
+        return CreateText(objectName, parent, anchor, size, fontSize, alignment);
     }
 
     private Text CreateText(string objectName, Transform parent, Vector2 anchor, Vector2 size, int fontSize, TextAnchor alignment)
@@ -211,10 +302,7 @@ public class SecondChanceQuizManager : MonoBehaviour
         textObject.transform.SetParent(parent, false);
 
         RectTransform rectTransform = textObject.GetComponent<RectTransform>();
-        rectTransform.anchorMin = anchor;
-        rectTransform.anchorMax = anchor;
-        rectTransform.sizeDelta = size;
-        rectTransform.anchoredPosition = Vector2.zero;
+        ConfigureRectTransform(rectTransform, anchor, size);
 
         Text text = textObject.GetComponent<Text>();
         text.font = quizFont != null ? quizFont : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
@@ -234,16 +322,33 @@ public class SecondChanceQuizManager : MonoBehaviour
         return text;
     }
 
+    private Button FindOrCreateButton(string objectName, Transform parent, Vector2 anchor, Vector2 size)
+    {
+        Transform existingButton = parent.Find(objectName);
+        if (existingButton != null && existingButton.TryGetComponent(out Button button))
+        {
+            ConfigureRectTransform(button.GetComponent<RectTransform>(), anchor, size);
+
+            Text buttonText = button.GetComponentInChildren<Text>();
+            if (buttonText == null)
+            {
+                buttonText = CreateText("Text", button.transform, new Vector2(0.5f, 0.5f), new Vector2(size.x - 24f, size.y), 30, TextAnchor.MiddleCenter);
+            }
+
+            ApplyTextStyle(buttonText, 30);
+            return button;
+        }
+
+        return CreateButton(objectName, parent, anchor, size);
+    }
+
     private Button CreateButton(string objectName, Transform parent, Vector2 anchor, Vector2 size)
     {
         GameObject buttonObject = new GameObject(objectName, typeof(Image), typeof(Button));
         buttonObject.transform.SetParent(parent, false);
 
         RectTransform rectTransform = buttonObject.GetComponent<RectTransform>();
-        rectTransform.anchorMin = anchor;
-        rectTransform.anchorMax = anchor;
-        rectTransform.sizeDelta = size;
-        rectTransform.anchoredPosition = Vector2.zero;
+        ConfigureRectTransform(rectTransform, anchor, size);
 
         Image image = buttonObject.GetComponent<Image>();
         image.color = new Color(1f, 1f, 1f, 0f);
@@ -261,6 +366,14 @@ public class SecondChanceQuizManager : MonoBehaviour
         buttonText.color = Color.white;
 
         return button;
+    }
+
+    private void ConfigureRectTransform(RectTransform rectTransform, Vector2 anchor, Vector2 size)
+    {
+        rectTransform.anchorMin = anchor;
+        rectTransform.anchorMax = anchor;
+        rectTransform.sizeDelta = size;
+        rectTransform.anchoredPosition = Vector2.zero;
     }
 
     /// <summary>

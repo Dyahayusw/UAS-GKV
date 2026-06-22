@@ -3,8 +3,14 @@ using UnityEngine.SceneManagement;
 
 public class MainMenu : MonoBehaviour
 {
+    private void Awake()
+    {
+        Time.timeScale = 1f;
+    }
+
     public void PlayGame()
     {
+        Time.timeScale = 1f;
         SceneManager.LoadScene(1);
     }
 

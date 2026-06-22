@@ -8,8 +8,8 @@ public class GameOver : MonoBehaviour
     [Header("Game Over UI")]
     [Header("Game Over UI")]
     [SerializeField] private GameObject gameOverPanel;
-    [SerializeField] private Text finalScoreText; // Ganti kembali ke Text (Font standar Unity)
-    [SerializeField] private Font scoreFont; // Assign Sniglet-Regular.ttf di Inspector
+    [SerializeField] private Text finalScoreText;
+    [SerializeField] private Font scoreFont; 
     [SerializeField] private SecondChanceQuizManager secondChanceQuizManager;
     [SerializeField] private Transform playerRespawnPoint;
     [SerializeField] private float reviveInvulnerabilityTime = 1f;
@@ -21,6 +21,7 @@ public class GameOver : MonoBehaviour
 
     private void Awake()
     {
+        Time.timeScale = 1f;
         rb = GetComponent<Rigidbody2D>();
 
         if (gameOverPanel != null)
@@ -177,5 +178,11 @@ public class GameOver : MonoBehaviour
     {
         Time.timeScale = 1f;
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
+
+    public void BackHome()
+    {
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(0);
     }
 }

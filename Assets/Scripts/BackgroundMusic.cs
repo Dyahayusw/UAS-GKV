@@ -2,7 +2,6 @@ using UnityEngine;
 
 public class BackgroundMusic : MonoBehaviour
 {
-    private static BackgroundMusic backgroundMusic;
     private AudioSource audioSource;
 
     private void Awake()
@@ -14,20 +13,17 @@ public class BackgroundMusic : MonoBehaviour
             audioSource = gameObject.AddComponent<AudioSource>();
         }
 
-        if (backgroundMusic == null)
-        {
-            backgroundMusic = this;
-            DontDestroyOnLoad(gameObject);
-        }
-        else
-        {
-            Destroy(gameObject);
-            return;
-        }
-
         if (!audioSource.isPlaying)
         {
             audioSource.Play();
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (audioSource != null)
+        {
+            audioSource.Stop();
         }
     }
 
