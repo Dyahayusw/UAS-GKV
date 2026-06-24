@@ -5,30 +5,46 @@ using UnityEngine.UI;
 using UnityEditor;
 #endif
 
+// Kelas utama pengelola kuis "kesempatan kedua", yang muncul saat pemain gagal dan diberi kesempatan menjawab pertanyaan agar tidak langsung Game Over.
 public class SecondChanceQuizManager : MonoBehaviour
 {
+    // ------------ VARIABEL SERIALIZED UI KUIS ------------
+
     [Header("Quiz UI")]
+    // Panel utama yang menampung seluruh elemen UI kuis.
     [SerializeField] private GameObject quizPanel;
+    // Gambar latar belakang yang digunakan untuk panel kuis.
     [SerializeField] private Sprite quizBackgroundSprite;
+    // Font teks yang digunakan untuk pertanyaan dan jawaban kuis.
     [SerializeField] private Font quizFont;
+    // Komponen teks Unity UI untuk menampilkan pertanyaan.
     [SerializeField] private Text questionText;
+    // Array tombol yang berfungsi sebagai pilihan jawaban (A, B, C, D).
     [SerializeField] private Button[] answerButtons;
 
 #if UNITY_EDITOR
+    // Bagian editor: pengaturan untuk memunculkan UI kuis di dalam Hierarchy editor.
     [Header("Editor Preview")]
+    // Aktifkan agar UI quiz dibuat sebagai object scene, sehingga bisa diedit dari Hierarchy.
     [Tooltip("Aktifkan agar UI quiz dibuat sebagai object scene, sehingga bisa diedit dari Hierarchy.")]
     [SerializeField] private bool showQuizUiInEditor = true;
 #endif
 
+    // Bagian pengaturan offset teks jawaban agar pas di area merah sprite banner.
     [Header("Answer Text Offset (sesuaikan agar pas di tengah area merah)")]
+    // Geser teks jawaban secara vertikal (pixel). Nilai negatif = turun, positif = na-Re-.
     [Tooltip("Geser teks jawaban secara vertikal (pixel). Nilai negatif = turun, positif = naik.")]
     [SerializeField] private float answerTextVerticalOffset = 10f;
+    // Lebar area teks relatif terhadap tombol (0-1). Kecilkan jika teks terlalu lebar untuk area merah.
     [Tooltip("Lebar area teks relatif terhadap tombol (0-1). Kecilkan jika teks terlalu lebar untuk area merah.")]
     [SerializeField] private float answerTextWidthRatio = 0.75f;
+    // Tinggi area teks relatif terhadap tombol (0-1). Kecilkan agar teks tidak menabrak daun di atas/bawah.
     [Tooltip("Tinggi area teks relatif terhadap tombol (0-1). Kecilkan agar teks tidak menabrak daun di atas/bawah.")]
     [SerializeField] private float answerTextHeightRatio = 0.45f;
 
+    // Bagian data pertanyaan kuis.
     [Header("Questions")]
+    // Array berisi semua pertanyaan dan jawaban kuis yang tersedia.
     [SerializeField] private QuizQuestion[] questions =
     {
         new QuizQuestion
@@ -93,26 +109,35 @@ public class SecondChanceQuizManager : MonoBehaviour
         }
     };
 
+    // ------------ VARIABEL PRIVATE INTERNAL ------------
+
+    // Callback yang dipanggil ketika kuis selesai, parameter bool menunjukkan apakah jawaban benar.
     private Action<bool> onQuizFinished;
+    // Menyimpan referensi pertanyaan yang sedang aktif dalam kuis.
     private QuizQuestion currentQuestion;
+    // Label prefix untuk setiap pilihan jawaban (A, B, C, D).
     private readonly string[] answerLabels = { "A. ", "B. ", "C. ", "D. " };
 
 #if UNITY_EDITOR
+    // Flag internal untuk mencegah refresh editor berulang kali dalam satu frame.
     private bool editorRefreshQueued;
 
+    // Dipanggil otomatis oleh Unity Editor ketika ada perubahan nilai di Inspector.
     private void OnValidate()
     {
+        // Muat ulang sprite latar belakang default jika belum diatur.
         if (quizBackgroundSprite == null)
         {
             quizBackgroundSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Assets/Sprites/assets (7).png");
         }
 
+        // Muat ulang font kuis default jika belum diatur.
         if (quizFont == null)
         {
             quizFont = AssetDatabase.LoadAssetAtPath<Font>("Assets/Fonts/Sniglet-Regular.ttf");
         }
 
-        // Live-update posisi teks jawaban di Editor saat slider offset diubah
+        // Lakukan update posisi teks jawaban di Editor saat slider offset diubah dan sedang tidak bermain.
         if (!Application.isPlaying && showQuizUiInEditor)
         {
             QueueEditorQuizUiRefresh();
@@ -121,6 +146,7 @@ public class SecondChanceQuizManager : MonoBehaviour
         RepositionAnswerTexts();
     }
 
+    // Menjadwalkan pembaruan UI kuis di editor agar tidak terjadi terlalu sering.
     private void QueueEditorQuizUiRefresh()
     {
         if (editorRefreshQueued)
@@ -139,6 +165,7 @@ public class SecondChanceQuizManager : MonoBehaviour
         };
     }
 
+    // Membuat atau memperbarui UI kuis di dalam scene editor agar dapat diedit dari Hierarchy.
     [ContextMenu("Create/Refresh Quiz UI In Scene")]
     private void EnsureQuizUiExistsInScene()
     {
@@ -165,6 +192,7 @@ public class SecondChanceQuizManager : MonoBehaviour
 #endif
     }
 
+    // Mengatur visibilitas panel kuis di editor (hanya untuk keperluan preview).
     private void SetQuizUiVisibleInEditor(bool isVisible)
     {
         if (quizPanel != null)
@@ -174,11 +202,13 @@ public class SecondChanceQuizManager : MonoBehaviour
     }
 #endif
 
+    // Dipanggil sekali saat object ini pertama kali diinisialisasi, sebelum Start.
     private void Awake()
     {
         LoadDefaultBackgroundSprite();
         LoadDefaultQuizFont();
 
+        // Jika referensi UI belum diisi, buat UI kuis default secara runtime.
         if (quizPanel == null || questionText == null || answerButtons == null || answerButtons.Length == 0)
         {
             CreateDefaultQuizUi();
@@ -186,11 +216,14 @@ public class SecondChanceQuizManager : MonoBehaviour
 
         ApplyQuizTextStyle();
         RepositionAnswerTexts();
+        // Sembunyikan panel kuis sampai dipanggil nanti.
         quizPanel.SetActive(false);
     }
 
+    // Memulai proses kuis, dipilih pertanyaan secara acak dan UI槽UI ditampilkan.
     public void StartQuiz(Action<bool> callback)
     {
+        // Pastikan ada pertanyaan yang tersedia sebelum memulai kuis.
         if (questions == null || questions.Length == 0)
         {
             Debug.LogWarning("Pertanyaan quiz belum diisi. Player langsung Game Over.");
@@ -199,13 +232,15 @@ public class SecondChanceQuizManager : MonoBehaviour
         }
 
         onQuizFinished = callback;
+        // Pilih pertanyaan secara acak dari daftar.
         currentQuestion = questions[UnityEngine.Random.Range(0, questions.Length)];
 
         quizPanel.SetActive(true);
-        Time.timeScale = 0f;
+        Time.timeScale = 0f; // Hentikan waktu game saat kuis berlangsung.
 
         questionText.text = currentQuestion.question;
 
+        // Iterasi semua tombol jawaban dan atur teks serta listener sesuai data pertanyaan.
         for (int i = 0; i < answerButtons.Length; i++)
         {
             int answerIndex = i;
@@ -224,29 +259,34 @@ public class SecondChanceQuizManager : MonoBehaviour
         }
     }
 
+    // Menyelesaikan kuis, sembunyikan UI dan kembalikan waktu game ke normal.
     private void FinishQuiz(bool isCorrect)
     {
         quizPanel.SetActive(false);
-        Time.timeScale = 1f;
+        Time.timeScale = 1f; // Kembalikan waktu game ke normal.
         onQuizFinished?.Invoke(isCorrect);
+        // Hapus referensi callback agar tidak ada leak memory.
         onQuizFinished = null;
     }
 
+    // Membuat UI kuis default jika belum ada di scene ( Canvas, panel, teks, tombol ).
     private void CreateDefaultQuizUi()
     {
         Canvas canvas = FindAnyObjectByType<Canvas>();
 
         if (canvas == null)
         {
+            // Buat Canvas baru jika belum ada di scene.
             GameObject canvasObject = new GameObject("Quiz Canvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
             canvas = canvasObject.GetComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas .renderMode = RenderMode.ScreenSpaceOverlay;
 
             CanvasScaler canvasScaler = canvasObject.GetComponent<CanvasScaler>();
             canvasScaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             canvasScaler.referenceResolution = new Vector2(1920f, 1080f);
         }
 
+        // Cek apakah panel kuis sudah ada, jika ya gunakan yang sudah ada.
         Transform existingQuizPanel = canvas.transform.Find("Second Chance Quiz Panel");
         if (existingQuizPanel != null)
         {
@@ -269,11 +309,13 @@ public class SecondChanceQuizManager : MonoBehaviour
         panelRect.offsetMin = Vector2.zero;
         panelRect.offsetMax = Vector2.zero;
 
+        // Atur properti visual panel utama kuis.
         Image panelImage = quizPanel.GetComponent<Image>();
         panelImage.sprite = quizBackgroundSprite;
         panelImage.color = Color.white;
         panelImage.preserveAspect = false;
 
+        // Inisialisasi teks pertanyaan dan tombol jawaban.
         questionText = FindOrCreateText("Question Text", quizPanel.transform, new Vector2(0.5f, 0.675f), new Vector2(1050f, 170f), 46, TextAnchor.MiddleCenter);
         answerButtons = new Button[4];
 
@@ -283,6 +325,7 @@ public class SecondChanceQuizManager : MonoBehaviour
         answerButtons[3] = FindOrCreateButton("Answer Button D", quizPanel.transform, new Vector2(0.66f, 0.265f), new Vector2(360f, 95f));
     }
 
+    // Mencari atau membuat komponen teks UI dengan konfigurasi tertentu.
     private Text FindOrCreateText(string objectName, Transform parent, Vector2 anchor, Vector2 size, int fontSize, TextAnchor alignment)
     {
         Transform existingText = parent.Find(objectName);
@@ -296,6 +339,7 @@ public class SecondChanceQuizManager : MonoBehaviour
         return CreateText(objectName, parent, anchor, size, fontSize, alignment);
     }
 
+    // Membuat komponen teks UI baru dengan properti default yang sesuai untuk kuis.
     private Text CreateText(string objectName, Transform parent, Vector2 anchor, Vector2 size, int fontSize, TextAnchor alignment)
     {
         GameObject textObject = new GameObject(objectName, typeof(Text));
@@ -315,6 +359,7 @@ public class SecondChanceQuizManager : MonoBehaviour
         text.resizeTextMinSize = 24;
         text.resizeTextMaxSize = fontSize;
 
+        // Tambahkan efek bayangan pada teks agar lebih terbaca.
         Shadow shadow = textObject.AddComponent<Shadow>();
         shadow.effectColor = new Color(0.28f, 0.12f, 0.02f, 0.35f);
         shadow.effectDistance = new Vector2(2f, -2f);
@@ -322,6 +367,7 @@ public class SecondChanceQuizManager : MonoBehaviour
         return text;
     }
 
+    // Mencari atau membuat tombol jawaban dengan teks di dalamnya.
     private Button FindOrCreateButton(string objectName, Transform parent, Vector2 anchor, Vector2 size)
     {
         Transform existingButton = parent.Find(objectName);
@@ -342,6 +388,7 @@ public class SecondChanceQuizManager : MonoBehaviour
         return CreateButton(objectName, parent, anchor, size);
     }
 
+    // Membuat tombol jawaban baru dengan styling standar (transparan saat normal).
     private Button CreateButton(string objectName, Transform parent, Vector2 anchor, Vector2 size)
     {
         GameObject buttonObject = new GameObject(objectName, typeof(Image), typeof(Button));
@@ -368,6 +415,7 @@ public class SecondChanceQuizManager : MonoBehaviour
         return button;
     }
 
+    // Mengatur properti RectTransform seperti anchor dan ukuran.
     private void ConfigureRectTransform(RectTransform rectTransform, Vector2 anchor, Vector2 size)
     {
         rectTransform.anchorMin = anchor;
@@ -401,6 +449,7 @@ public class SecondChanceQuizManager : MonoBehaviour
             textRect.anchorMin = new Vector2(0.5f, 0.5f);
             textRect.anchorMax = new Vector2(0.5f, 0.5f);
 
+            // Hitung ukuran area teks berdasarkan ratio agar pas di area merah sprite.
             float width = buttonRect.sizeDelta.x * answerTextWidthRatio;
             float height = buttonRect.sizeDelta.y * answerTextHeightRatio;
             textRect.sizeDelta = new Vector2(width, height);
@@ -408,6 +457,7 @@ public class SecondChanceQuizManager : MonoBehaviour
         }
     }
 
+    // Memuat gambar latar belakang default jika belum ada referensi.
     private void LoadDefaultBackgroundSprite()
     {
         if (quizBackgroundSprite != null)
@@ -418,6 +468,7 @@ public class SecondChanceQuizManager : MonoBehaviour
 #endif
     }
 
+    // Memuat font kuis default jika belum ada referensi.
     private void LoadDefaultQuizFont()
     {
         if (quizFont != null)
@@ -428,6 +479,7 @@ public class SecondChanceQuizManager : MonoBehaviour
 #endif
     }
 
+    // Menerapkan gaya teks (font, ukuran, dll.) pada pertanyaan dan semua teks jawaban.
     private void ApplyQuizTextStyle()
     {
         ApplyTextStyle(questionText, 46);
@@ -445,6 +497,7 @@ public class SecondChanceQuizManager : MonoBehaviour
         }
     }
 
+    // Menerapkan gaya standar pada komponen teks UI (font, warna, wrapping, dsb.).
     private void ApplyTextStyle(Text text, int maxFontSize)
     {
         if (text == null)
@@ -463,6 +516,7 @@ public class SecondChanceQuizManager : MonoBehaviour
         text.resizeTextMinSize = 22;
         text.resizeTextMaxSize = maxFontSize;
 
+        // Tambahkan efek bayangan jika belum ada.
         if (text.GetComponent<Shadow>() == null)
         {
             Shadow shadow = text.gameObject.AddComponent<Shadow>();
